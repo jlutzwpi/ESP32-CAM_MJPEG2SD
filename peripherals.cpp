@@ -192,6 +192,54 @@ static void prepServos() {
     If DS18B20 is not present, use ESP internal temperature sensor
 */
 
+//environmental data from BME280
+// peripherals (BME sensor)
+#include <Wire.h>
+#include <Adafruit_BME280.h>
+TaskHandle_t BME280handle = NULL;
+static float curTemp = 0.0;
+static float curAltitude = 0.0;
+static float curHumidity = 0.0;
+//initialize BME task
+static void BME280task(void* pvParameters) {
+  Adafruit_BME280 bme; // I2C
+  while (true) {
+    //set up atmospheric pressure sensor
+    bool status = bme.begin(BME280_ADDRESS_ALTERNATE); //I2C address is 0x76 for my hardware
+    if(!status)
+    {
+      LOG_INF("*** BME Sensor FAILURE!!! ***");
+    }
+    curTemp = (bme.readTemperature()*1.8)+32.0; //convert from C to F
+    curAltitude = bme.readAltitude(1013.25)*3.28084;  //convert from meters to ft
+    curHumidity = bme.readHumidity();
+    //LOG_INF("Environmental data received: %f, %f, %f", curTemp, curHumidity, curAltitude);
+    
+    delay(100);
+  }
+  
+}
+//create the task
+void prepBmeSensor() {
+    size_t stacksize = 1024 * 2;
+    xTaskCreate(&BME280task, "BME280task", stacksize, NULL, 1, &BME280handle);
+}
+//return current temperature
+float readBMETemp()
+{
+  return curTemp;
+}
+//return current humidity
+float readBMEHumidity()
+{
+  return curHumidity;
+}
+//return current altitude
+float readBMEAltitude()
+{
+  return curAltitude;
+}
+
 #if USE_DS18B20
 #include <OneWire.h> 
 #include <DallasTemperature.h>
@@ -466,13 +514,13 @@ uint32_t usePeripheral(const byte pinNum, const uint32_t receivedData) {
 }
 
 static void prepPIR() {
-  if ((pirPin < EXTPIN) && pirUse) {
-    if (pirPin) pinMode(pirPin, INPUT_PULLDOWN); // pulled high for active
-    else {
-      pirUse = false;
-      LOG_WRN("No PIR pin defined");
-    }
-  }
+//  if ((pirPin < EXTPIN) && pirUse) {
+//    if (pirPin) pinMode(pirPin, INPUT_PULLDOWN); // pulled high for active
+//    else {
+//      pirUse = false;
+//      LOG_WRN("No PIR pin defined");
+//    }
+//  }
 }
 
 void prepPeripherals() {
@@ -482,6 +530,7 @@ void prepPeripherals() {
   setupLamp();
   prepPIR();
   prepTemperature();
+  prepBmeSensor();
   prepServos();  
   debugMemory("prepPeripherals");
 }
