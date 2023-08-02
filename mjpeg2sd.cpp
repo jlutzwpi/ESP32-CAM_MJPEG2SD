@@ -53,6 +53,8 @@ static size_t highPoint;
 static File aviFile;
 static char aviFileName[FILE_NAME_LEN];
 
+static File bmeFile;
+
 // SD playback
 static File playbackFile;
 static char partName[FILE_NAME_LEN];
@@ -73,6 +75,7 @@ static volatile bool isPlaying = false;
 bool isCapturing = false;
 bool stopPlayback = false;
 bool timeLapseOn = false;
+
 
 /**************** timers & ISRs ************************/
 
@@ -115,6 +118,7 @@ static void openAvi() {
   dateFormat(partName, sizeof(partName), false);
   // open avi file with temporary name 
   aviFile  = SD_MMC.open(AVITEMP, FILE_WRITE);
+  bmeFile = SD_MMC.open("/env_data.csv", FILE_WRITE);
   oTime = millis() - oTime;
   LOG_DBG("File opening time: %ums", oTime);
   startAudio();
@@ -253,6 +257,21 @@ static void saveFrame(camera_fb_t* fb) {
   fTime = millis() - fTime - wTime;
   fTimeTot += fTime;
   LOG_DBG("Frame processing time %u ms", fTime);
+
+  //save bme data
+  if(frameCnt == 1)
+  {
+    //if it's the first line, print the header
+    bmeFile.println("time (ms),temp (*F), humidity (%),altitude (ft)");
+  }
+  else
+  {
+    //print the data to the file
+    String bmeData = String(String(millis()) + "," + String(readBMETemp()) + "," + String(readBMEHumidity()) + "," + String(readBMEAltitude()));
+    bmeFile.println(bmeData);
+    //LOG_INF("Environmental data written: %f, %f, %f", readBMETemp(), readBMEHumidity(), readBMEAltitude());
+  }
+        
 }
 
 static bool closeAvi() {
@@ -290,6 +309,7 @@ static bool closeAvi() {
   aviFile.seek(0, SeekSet); // start of file
   aviFile.write(aviHeader, AVI_HEADER_LEN); 
   aviFile.close();
+  bmeFile.close();
   LOG_DBG("Final SD storage time %lu ms", millis() - cTime);
   uint32_t hTime = millis(); 
   if (vidDurationSecs >= minSeconds) {
@@ -335,6 +355,7 @@ static bool closeAvi() {
     LOG_INF("Insufficient capture duration: %u secs", vidDurationSecs); 
     return false;
   }
+  
 }
 
 static boolean processFrame() {
@@ -400,7 +421,8 @@ static boolean processFrame() {
   fb = NULL; 
   if (finishRecording) {
     // cleanly finish recording (normal or forced)
-    if (stopPlayback) closeAvi();
+    // added by JEL: if I lose connection, track number of frames, if it's greater than 20000, stop video and save file
+    if (stopPlayback || (frameCnt >= maxFrames)) closeAvi();
     finishRecording = isCapturing = wasCapturing = stopPlayback = false; // allow for playbacks
   }
   return res;
@@ -681,6 +703,7 @@ void endTasks() {
   deleteTask(captureHandle);
   deleteTask(playbackHandle);
   deleteTask(DS18B20handle);
+  deleteTask(BME280handle);
   deleteTask(servoHandle);
   deleteTask(emailHandle);
   deleteTask(ftpHandle);
