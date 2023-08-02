@@ -5,13 +5,13 @@
 #pragma once
 #include "globals.h"
 
-#if defined(CONFIG_IDF_TARGET_ESP32)
+//#if defined(CONFIG_IDF_TARGET_ESP32)
 // default pin configuration for ESP32 cam boards
-#define CAMERA_MODEL_AI_THINKER // Has PSRAM  
-#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+//#define CAMERA_MODEL_AI_THINKER // Has PSRAM  
+//#elif defined(CONFIG_IDF_TARGET_ESP32S3)
 // default pin configuration below for Freenove ESP32S3 cam boards
-#define CAMERA_MODEL_ESP32S3_EYE // Has PSRAM
-#endif
+//#define CAMERA_MODEL_ESP32S3_EYE // Has PSRAM
+//#endif
 
 /**************************************************************************
  Uncomment one only of the camera models below if not using a default above
@@ -27,7 +27,7 @@
 //#define CAMERA_MODEL_M5STACK_ESP32CAM // No PSRAM
 //#define CAMERA_MODEL_M5STACK_UNITCAM // No PSRAM
 //#define CAMERA_MODEL_TTGO_T_JOURNAL // No PSRAM
-//#define CAMERA_MODEL_XIAO_ESP32S3 // Has PSRAM
+#define CAMERA_MODEL_XIAO_ESP32S3 // Has PSRAM
 //#define CAMERA_MODEL_ESP32_CAM_BOARD
 //#define CAMERA_MODEL_ESP32S2_CAM_BOARD
 //#define CAMERA_MODEL_ESP32S3_CAM_LCD
@@ -89,6 +89,8 @@
 #define WAVTEMP "/current.wav"
 #define AVITEMP "/current.avi"
 #define TLTEMP "/current.tl"
+//environmental data
+#define ENVDATA "/env_data.csv"
 
 // non default pins configured for SD card on given camera board
 #if defined(CAMERA_MODEL_ESP32S3_EYE)
@@ -210,8 +212,6 @@ extern const uint8_t dcBuf[]; // 00dc
 extern const uint8_t wbBuf[]; // 01wb
 extern byte* uartData;
 
-// peripherals
-
 // IO Extender use
 extern bool useIOextender; // true to use IO Extender, otherwise false
 extern bool useUART0;
@@ -267,6 +267,7 @@ extern const uint32_t WAV_HEADER_LEN;
 // task handling
 extern TaskHandle_t playbackHandle;
 extern TaskHandle_t DS18B20handle;
+extern TaskHandle_t BME280handle;
 extern TaskHandle_t servoHandle;
 extern TaskHandle_t uartClientHandle;
 extern TaskHandle_t emailHandle;
