@@ -95,10 +95,10 @@ static void prepCam() {
       if (retrieveConfigVal("framesize", fsizePtr)) s->set_framesize(s, (framesize_t)(atoi(fsizePtr)));
       else s->set_framesize(s, FRAMESIZE_SVGA);
   
-#if defined(CAMERA_MODEL_M5STACK_WIDE)
+//#if defined(CAMERA_MODEL_M5STACK_WIDE)
       s->set_vflip(s, 1);
       s->set_hmirror(s, 1);
-#endif
+//#endif
   
 #if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
     s->set_vflip(s, 1);
